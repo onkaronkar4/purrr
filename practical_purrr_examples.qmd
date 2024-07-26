@@ -1,0 +1,77 @@
+---
+title: "practical_purrr_examples"
+format: html
+---
+
+## nesting and unnesting
+
+```{r}
+library(tidyverse)
+library(gapminder)
+```
+
+```{r}
+nested_country <- gapminder |> 
+  nest(data  = !country) # using tidyselect here instead of data = c(continent, year, lifeExp, pop, gdpPercap)
+  
+```
+
+```{r}
+# lets sample 5 countries
+nested_country |> 
+  sample_n(5) |> 
+  unnest()
+
+nested_country |> 
+filter(country == "India") |> 
+  unnest()
+
+```
+
+## Nested data frame, modelling, and Gapminder
+
+```{r}
+library(tidyverse)
+library(gapminder)
+library(broom)
+```
+
+```{r}
+gapminder %>% 
+  ggplot(aes(year, lifeExp, group = country)) +
+    geom_line(alpha = 1/3)
+```
+
+What if we fit a line to each country?
+
+```{r}
+gapminder %>%
+  ggplot(aes(year, lifeExp, group = country)) +
+  geom_line(stat = "smooth", method = "lm",
+            alpha = 1/3, se = FALSE, colour = "black")
+```
+
+What if you actually want those fits? To access estimates, p-values, etc. In that case, you need to fit them yourself. How to do that?
+
+-   Put the variables needed for country-specific models into nested dataframe. In a **list-column**!
+
+-   Use the usual “map inside mutate”, possibly with the broom package, to pull interesting information out of the 142 fitted linear models.
+
+### Nested data frame
+
+Nest the data frames, i.e. get one meta-row per country:
+
+```{r}
+# oneway
+gap_nested <- gapminder %>%
+  group_by(country) %>%
+  nest()
+gap_nested
+# better
+gap_nested <- gapminder |> 
+  nest(data = !country)
+
+# much better
+gap_nested<- gapminder |> 
+  nest(.by = country)
+```
